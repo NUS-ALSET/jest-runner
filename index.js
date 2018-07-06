@@ -78,6 +78,7 @@ exports.handler = function(event, context, callback) {
       
       })
       .catch((failure) => {
+        console.log("****** In the error handler code. *******")
         console.error(failure);
         let result = {
           "isBase64Encoded": false,
