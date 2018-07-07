@@ -1,6 +1,6 @@
-// For development/testing purposes
 const jest = require("jest");
-
+const fs = require('fs');
+    
 var html = `<html>
 <body>
 <h1>Enter test code</h1>
@@ -34,7 +34,11 @@ exports.handler = function(event, context, callback) {
   // Update the contents of the files. 
   // Execute jest programatically
   // Return jest results. 
-  if (event.httpMethod != "GET"){
+  if (event.httpMethod == "GET"){
+    
+    // Read in text for index.html.
+    let html = fs.readFileSync(__dirname + '/index.html', 'utf8');
+    //console.log(html); 
     
     let result = {
       "isBase64Encoded": false,
@@ -46,7 +50,6 @@ exports.handler = function(event, context, callback) {
     
   } else {
 
-    var fs = require('fs');
     fs.writeFileSync('/tmp/index.spec.js', testContent);
     fs.writeFileSync('/tmp/index.js', solutionContent);
 
@@ -70,7 +73,7 @@ exports.handler = function(event, context, callback) {
         let result = {
           "isBase64Encoded": false,
           "statusCode": 200,
-          "headers": {"content-type": "text/html"},//"application/json"},
+          "headers": {"content-type": "application/json"},
           "body": JSON.stringify(success)
           }
           
