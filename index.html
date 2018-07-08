@@ -44,14 +44,28 @@
           <button type="button" onClick="javascript: document.getElementById('file').click()" class="btn btn-sm btn-primary">Upload from a file</a>
         </h3>
         <textarea id="ipynbInputTextField" cols="80" rows="10" class="form-control code-container">
-        // Solution code                
+exports.hello = function() {
+  return "HELLO";
+}              
         </textarea>
         <br/>
         <h3 class="text-center">Test Code
             <button type="button" onClick="javascript: document.getElementById('file').click()" class="btn btn-sm btn-primary">Upload from a file</a>
           </h3>
           <textarea id="testInputTextField" cols="80" rows="10" class="form-control code-container">
-          // Test code       
+var greetings = require("./index");
+
+describe('Addition', () => {
+  it('knows that 2 and 2 make 4', () => {
+    expect(2 + 2).toBe(5);
+  });
+});
+            
+describe('Greeting', () => {
+  it('knows that hello returns HELLO', () => {
+    expect( greetings.hello() ).toBe("HELLO");
+  });
+});      
          </textarea>
           <br/>
         <div class="hide">
@@ -87,6 +101,8 @@
     var executeNotebook = function () {
       console.log("POSTing javascript files as JSON. Not yet writing out files.");
       var x = document.getElementById("ipynbInputTextField").value;
+      var testCode = document.getElementById("testInputTextField").value;
+      
       var inputText = document.getElementById("textField").value;
       if (x)
         var nb = x //JSON.parse(x);
@@ -97,9 +113,13 @@
         ];
       }
       var result = {};
+      result.files = {};
+      result['files']['index.js'] = nb;
+      result['files']['index.spec.js'] = testCode;
+      
       result['notebook'] = nb;
       if (window.UPLOADED_FILES) {
-        result.files = {};
+        
         for (var i = 0; i < window.UPLOADED_FILES.length; i++) {
           result.files[window.UPLOADED_FILES[i].name] = window.UPLOADED_FILES[i].content;
         }

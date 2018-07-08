@@ -1,39 +1,10 @@
 const jest = require("jest");
 const fs = require('fs');
     
-var html = `<html>
-<body>
-<h1>Enter test code</h1>
-</body>
-</html>`
-
-let testContent = `
-var greetings = require("./index");
-
-describe('Addition', () => {
-    it('knows that 2 and 2 make 4', () => {
-      expect(2 + 2).toBe(5);
-    });
-  });
-
-describe('Greeting', () => {
-  it('knows that hello returns HELLO', () => {
-    expect( greetings.hello() ).toBe("HELLO");
-  });
-});
-`
-let solutionContent = `
-exports.hello = function() {
-  return "HELLO";
-}
-`
 
 exports.handler = function(event, context, callback) {
 
-  // Get files to update from the event object. 
-  // Update the contents of the files. 
-  // Execute jest programatically
-  // Return jest results. 
+ 
   if (event.httpMethod == "GET"){
     
     // Read in text for index.html.
@@ -49,17 +20,31 @@ exports.handler = function(event, context, callback) {
     callback(null, result);
     
   } else {
+    // Get files to update from the event object. 
+    // Update the contents of the files. 
+    // Execute jest programatically
+    // Return jest results.
+    
+    // Look for locally passed files.
+    let body = JSON.parse(event.body);
 
-    fs.writeFileSync('/tmp/index.spec.js', testContent);
-    fs.writeFileSync('/tmp/index.js', solutionContent);
-
+    //console.log(body.files);
+    for (file in body.files){
+      console.log(file);
+      if(file != "data1.txt"){
+        fs.writeFileSync('/tmp/'+file , body.files[file]);
+      } else {
+        console.log("Not handling zip files encoded in data1.txt yet.")
+      }
+    }
+    
     console.log('Running index.handler');
     console.log('==================================');
     console.log('event', event);
     console.log('==================================');
   
     const options = {
-      projects: [__dirname], //['/tmp'] need to run jest in /tmp file rather than locally. 
+      projects: [__dirname], 
       silent: true,
     };
     
