@@ -9,7 +9,7 @@ Resources:
     Properties:
       Handler: index.handler
       Runtime: nodejs6.10
-      Timeout: 30
+      Timeout: 300
       Events:
         GetForm:
           Type: Api

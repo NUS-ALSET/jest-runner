@@ -83,10 +83,10 @@ exports.handler = function(event, context, callback) {
         "headers": {"content-type": "text/html"},//"application/json"},
         "body": "Not waiting to return"
         }
-      setTimeout(function() {
-        callback(null, result);
+      // setTimeout(function() {
+      //   callback(null, result);
       
-        }, 15000);
+      //   }, 15000);
       
     
   // in POST
