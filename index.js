@@ -1,4 +1,5 @@
 const jest = require("jest");
+const babel = require("babel-core")
 const fs = require('fs');
     
 
@@ -27,12 +28,55 @@ exports.handler = function(event, context, callback) {
     
     // Look for locally passed files.
     let body = JSON.parse(event.body);
-
+    const babelConfig = {
+      "presets": [
+          "es2015",
+          "react"
+      ],
+      "plugins": [
+          ["module-resolver", {
+              "cwd": [__dirname],
+              "root":"/tmp",
+              "alias": {
+                  "^react": `${__dirname}/node_modules/\\0`
+                },
+                resolvePath(source, file, opts) {
+                    console.log(source[0] === '.' ? source : `${__dirname}/node_modules/${source}`);
+                    return source[0] === '.' ? source : `${__dirname}/node_modules/${source}`;
+                }
+              }
+          ]
+      ]
+  }
     //console.log(body.files);
-    for (file in body.files){
+    const existPath ={};
+    // Save file to the tmp directory
+    function saveFile(filePath,code){
+      const paths = filePath.split('/');
+      const folders = paths.length>1 ? paths.slice(0,-1) : [];
+      if(folders.length>0){
+          let path='';
+          for(let folder of folders){
+              path +=folder;
+              if(!existPath[path]){
+                  fs.mkdirSync(`/tmp/${path}`);
+                  existPath[path]=true;
+              }
+              path+='/';
+          }
+      }
+      let compiledCode = {};
+      if(/\.js?$/.test(filePath)) {
+          compiledCode = babel.transform(code, babelConfig);
+      } else{
+          compiledCode.code = code;
+      }
+      fs.writeFileSync(`/tmp/${filePath}`,compiledCode.code);
+  }
+  for (file in body.files){
       console.log(file);
       if(file != "data1.txt"){
-        fs.writeFileSync('/tmp/'+file , body.files[file]);
+        saveFile(file,body.files[file]);
       } else {
         console.log("Not handling zip files encoded in data1.txt yet.")
       }
@@ -44,10 +88,10 @@ exports.handler = function(event, context, callback) {
     console.log('==================================');
   
     const options = {
-      projects: [__dirname], 
+      projects: [__dirname],
       silent: true,
     };
-    
+
     jest
       .runCLI(options, options.projects)
       .then((success) => {
@@ -76,6 +120,7 @@ exports.handler = function(event, context, callback) {
           }
         callback(null, result);
       });
+
     
       let result = {
         "isBase64Encoded": false,
