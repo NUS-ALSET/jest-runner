@@ -43,6 +43,7 @@
       background-color: rgba(0, 0, 0, .6);
       justify-content: center;
       visibility: hidden;
+      cursor: not-allowed;
     }
 
     .disabled-overlay .loader {
@@ -289,9 +290,7 @@
       padding: 20px;
       font-family: "Gentium Book Basic";
       color: #111;
-      /* height: calc(100vh - 230px); */
       height: 100%;
-      ;
       min-height: 400px;
       resize: none;
       background-color: white;
@@ -358,6 +357,58 @@
     #result-div {
       background-color: #353c46;
       margin: 10px 0px;
+      font-family: monospace;
+    }
+
+    #result-div .log {
+      display: flex;
+      color: white;
+      font-size: 14px;
+      padding: 6px;
+      background-color: #252a31;
+      border-bottom: solid 1px #353c46;
+    }
+
+    #result-div .log-status {
+      width: 50px;
+      text-align: center
+    }
+
+    #result-div .log-time {
+      width: 80px;
+      text-align: center
+    }
+
+    #result-div .log .log-describe {
+      width: 225px;
+    }
+
+    #result-div .log-expect {
+      width: calc(100% - 355px);
+    }
+
+    #result-div .error {
+      color: red;
+    }
+
+    #result-div .success {
+      color: green;
+    }
+
+    #result-div .log-err {
+      border-bottom: solid 1px #353c46;
+    }
+
+    /* #result-div .log-err pre {
+      font-size: 12px !important;
+    } */
+
+    #result-div .console {
+      color: white;
+      background-color: #0b0b0b;
+      padding: 10px;
+      font-size: 12px !important;
+      line-height: 1.5;
     }
 
     /* Landscape mobile & down */
@@ -389,13 +440,11 @@
         width: 100%;
       }
 
-      .file2 {
-        /* margin-top: 20px; */
+      /* .file2 {
       }
 
       .bigBtn {
-        /* font-size: 1.3em; */
-      }
+      } */
       .wrap .status {
         font-size: 25px;
       }
@@ -411,7 +460,7 @@
 
 <body>
   <div class="notification" hidden>
-    index.html is saved
+   message
   </div>
   <div class="super">
     <div class="wrap">
@@ -443,7 +492,7 @@
     <!-- <button class="bigBtn" id="addFileBtn"> Add File</button> -->
     <div style="height: 97px">
       <button class="bigBtn" id="saveFileBtn"> Save File </button>
-      <button class="bigBtn" id="postButton"> Post Your Files</button>
+      <button class="bigBtn" id="postButton"> Run Tests</button>
     </div>
 
   </div>
@@ -457,8 +506,12 @@
         </span>
       </div>
     </div>
-    <div class="mainWrap" hidden>
-      <pre class="mainArea" id="result-text"></pre>
+    <div class="result-logs">
+
+    </div>
+    <div class="mainWrap">
+      <h4 style="color: white; padding: 11px;">Complete Logs </h4>
+      <pre class="console" id="result-text"></pre>
     </div>
   </div>
   <div id="loader" class="disabled-overlay" hidden>
@@ -473,6 +526,10 @@
     };
     class App {
       constructor() {
+        /********** Add Github Acess Token Here **********/
+        this._accessToken ='<github_access_token>';
+        /************************************************/
+
         this._editor = ace.edit('editor');
         this._errorFont = '<i class="fas fa-times-circle"></i>';
         this._successFont = '<i class="fas fa-check-circle"></i>';
@@ -480,8 +537,7 @@
         this._githubServerURL = 'https://api.github.com';
         this._githubBaseURL = 'https://github.com/';
         this._rawGitURL = 'https://raw.githubusercontent.com';
-        this._accessToken = '070f254da8a6f980a8eeba7099f477b082f35051';
-
+    
         this._repoOwner = null;
         this.repoName = null;
         this._repoPath = null
@@ -496,7 +552,7 @@
         this._githubURLEle = document.querySelector('#githubForm input');
         this._headerTitleEle = document.querySelector('#title h3');
         this._notificationEle = document.querySelector('.notification');
-
+        
         this.setEditorOptions(this._editor, '', 'js', true);
       }
       setEditorOptions(editor, value = '', ext = 'js', readOnly = false) {
@@ -529,6 +585,7 @@
       }
       postFiles() {
         this.hideResult();
+        this.saveFile();
         let body = {}
         if (this._files.length === 0) {
           return;
@@ -552,9 +609,11 @@
             console.log(data);
             this.showResult(data.results);
             this.hideLoader();
-
           })
-          .catch(err => this.hideLoader(err))
+          .catch(err => {
+            this.handleError(err);
+            this.showResult(err.message);
+          })
       }
       showLoader() {
         this._loaderEle.style.visibility = 'visible';
@@ -589,10 +648,10 @@
           this.fetchFromURL(`${this._githubServerURL}/repos/${repoOwner}/${repoName}/contents${subPath}`)
             .then(files => {
               if (files && files.length) {
+                this.hideResult();
                 this._repoOwner = repoOwner;
                 this._repoName = repoName;
                 this._repoPath = subPath;
-                console.log(subPath)
                 this.setHeaderTitle();
                 this._selectedFile = null;
                 this._editor.setValue('');
@@ -701,26 +760,67 @@
         }
       }
       saveFile() {
-        const newCode = this._editor.getValue();
-        this._files = this._files.map(file => {
-          if (file.path === this._selectedFile.path) {
-            return {
-              ...file, code: newCode
+        if (this._selectedFile) {
+          const newCode = this._editor.getValue();
+          this._files = this._files.map(file => {
+            if (file.path === this._selectedFile.path) {
+              return {
+                ...file, code: newCode
+              }
             }
-          }
-          return file;
-        })
-        this.showNotification(`${this._selectedFile.path} is saved`);
+            return file;
+          })
+          this.showNotification(`${this._selectedFile.path} is saved`);
+        }
       }
       showResult(data) {
-        const text = JSON.stringify(data, null, '\t');
-        this._resultTextEle.innerHTML = text;
-        this._errorEle.innerHTML = data.numFailedTests + ' ' + this._errorFont;
-        this._successEle.innerHTML = data.numPassedTests + ' ' + this._successFont;
-        this._resultEle.removeAttribute('hidden');
+        if ((typeof data) === 'object') {
+          const text = JSON.stringify(data, null, '\t');
+          let completeErrorHtml = '';
+          for (let t of data.testResults) {
+            completeErrorHtml += t.failureMessage;
+          }
+          this._resultTextEle.innerHTML = data.success ? 'All tests passed.' : completeErrorHtml;
+          this._errorEle.innerHTML = data.numFailedTests + ' ' + this._errorFont;
+          this._successEle.innerHTML = data.numPassedTests + ' ' + this._successFont;
+          this._resultEle.removeAttribute('hidden');
+          let html = '';
+          for (let r of data.testResults || []) {
+            for (let result of r.testResults || []) {
+              html += `<div class="log">
+                    <div class="log-status ${result.status === 'failed' ? 'error' : 'success'}">
+                      <i class="fas ${result.status === 'failed' ? "fa-times-circle" : 'fa-check-circle'}"></i>
+                    </div>
+                    <div class="log-describe ${result.status === 'failed' ? 'error' : 'success'}">
+                      ${result.ancestorTitles.reduce((a, b) => a + ' ' + b)}
+                    </div>
+                    <div class="log-expect">
+                      ${result.title}
+                    </div>
+                    <div class="log-time">
+                      ${result.duration} ms
+                    </div>
+                  </div>
+                `;
+              if (result.failureMessages.length > 0) {
+                html += `<div class="log-err console">
+                  <pre>${result.failureMessages}</pre>
+                </div>`
+              }
+            }
+          }
+
+          document.querySelector('.result-logs').innerHTML = html;
+        } else {
+          this._resultEle.removeAttribute('hidden');
+          document.querySelector('.result-logs').innerHTML = data;
+        }
+        window.scrollTo(0, 900);
       }
       hideResult() {
         this._resultEle.setAttribute('hidden', true);
+        document.querySelector('.result-logs').innerHTML = "";
+        this._resultTextEle.innerHTML='';
       }
 
     }
@@ -730,7 +830,6 @@
     document.querySelector('#githubForm button').addEventListener('click', (e) => app.fetchGithubData());
     document.getElementById('saveFileBtn').addEventListener('click', (e) => app.saveFile());
     const openFile = filePath => app.openFile(filePath);
-
 
   </script>
 
