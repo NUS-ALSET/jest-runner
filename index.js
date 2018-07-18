@@ -1,9 +1,10 @@
 const jest = require("jest");
 const babel = require("babel-core")
 const fs = require('fs');
+const rimraf=require('rimraf');
 
-
-exports.handler = function(event, context, callback) {
+const rootDir = '/tmp/project';
+module.exports.handler = function(event, context, callback) {
 
 
   if (event.httpMethod == "GET"){
@@ -27,6 +28,12 @@ exports.handler = function(event, context, callback) {
     // Return jest results.
 
     // Look for locally passed files.
+    // remove old files
+    const hasExist=fs.existsSync(rootDir);
+    if(hasExist){
+      rimraf.sync(rootDir);
+    }
+    fs.mkdirSync(rootDir);
     let body = JSON.parse(event.body);
     const babelConfig = {
       "presets": [
@@ -39,7 +46,7 @@ exports.handler = function(event, context, callback) {
       "plugins": [
         ["module-resolver", {
           "cwd": [__dirname],
-          "root": "/tmp",
+          "root": rootDir,
           resolvePath(source, file, opts) {
             console.log(source[0] === '.' ? source : `${__dirname}/node_modules/${source}`);
             return source[0] === '.' ? source : `${__dirname}/node_modules/${source}`;
@@ -59,7 +66,7 @@ exports.handler = function(event, context, callback) {
         for(let folder of folders){
           path +=folder;
           if(!existPath[path]){
-            fs.mkdirSync(`/tmp/${path}`);
+            fs.mkdirSync(`${rootDir}/${path}`);
             existPath[path]=true;
           }
           path+='/';
@@ -68,10 +75,11 @@ exports.handler = function(event, context, callback) {
       let compiledCode = {};
       if (/\.(js|vue)?$/.test(filePath)) {
         compiledCode = babel.transform(code, babelConfig);
+        console.log(compiledCode);
       } else{
         compiledCode.code = code;
       }
-      fs.writeFileSync(`/tmp/${filePath}`,compiledCode.code);
+      fs.writeFileSync(`${rootDir}/${filePath}`,compiledCode.code);
     }
     for (file in body.files){
       console.log(file);

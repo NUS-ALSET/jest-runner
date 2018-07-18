@@ -533,7 +533,7 @@
         this._editor = ace.edit('editor');
         this._errorFont = '<i class="fas fa-times-circle"></i>';
         this._successFont = '<i class="fas fa-check-circle"></i>';
-        this._serverUrl = '/helloTest';
+        this._serverUrl = '/dev/helloTest';
         this._githubServerURL = 'https://api.github.com';
         this._githubBaseURL = 'https://github.com/';
         this._rawGitURL = 'https://raw.githubusercontent.com';
@@ -792,7 +792,7 @@
                       <i class="fas ${result.status === 'failed' ? "fa-times-circle" : 'fa-check-circle'}"></i>
                     </div>
                     <div class="log-describe ${result.status === 'failed' ? 'error' : 'success'}">
-                      ${result.ancestorTitles.reduce((a, b) => a + ' ' + b)}
+                      ${result.ancestorTitles && result.ancestorTitles.length ? result.ancestorTitles.reduce((a, b) => a + ' ' + b) : ''}
                     </div>
                     <div class="log-expect">
                       ${result.title}
