@@ -19,5 +19,5 @@ Resources:
         ExecuteTests:
           Type: Api
           Properties:
-            Path: /helloTest
+            Path: /dev/helloTest
             Method: post
