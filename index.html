@@ -247,6 +247,7 @@
       font-family: "Gentium Book Basic";
       box-shadow: 4px 4px 0px rgba(0, 0, 0, .1);
       color: #111;
+      min-width: 300px;
     }
 
     .pointer {
@@ -460,7 +461,7 @@
 
 <body>
   <div class="notification" hidden>
-   message
+    message
   </div>
   <div class="super">
     <div class="wrap">
@@ -519,15 +520,14 @@
   </div>
   <script>
     const extensions = {
-      js: 'javascript',
+      js: 'jsx', // becuase in react javascript is reactive javascript
       py: 'python',
-      ts: 'typescript',
-      jsx: 'javascript'
+      ts: 'typescript'
     };
     class App {
       constructor() {
         /********** Add Github Acess Token Here **********/
-        this._accessToken ='<github_access_token>';
+        this._accessToken = '55049a3ced7a4cc64cfd62c47bccbaacf5849176'; //'<github_access_token>';
         /************************************************/
 
         this._editor = ace.edit('editor');
@@ -537,7 +537,7 @@
         this._githubServerURL = 'https://api.github.com';
         this._githubBaseURL = 'https://github.com/';
         this._rawGitURL = 'https://raw.githubusercontent.com';
-    
+
         this._repoOwner = null;
         this.repoName = null;
         this._repoPath = null
@@ -553,6 +553,12 @@
         this._headerTitleEle = document.querySelector('#title h3');
         this._notificationEle = document.querySelector('.notification');
         
+        this._githubURLEle.addEventListener('keyup',(e)=>{
+          if(e.key==='Enter'){
+            this.fetchGithubData();
+          }
+        });
+
         this.setEditorOptions(this._editor, '', 'js', true);
       }
       setEditorOptions(editor, value = '', ext = 'js', readOnly = false) {
@@ -606,8 +612,13 @@
         })
           .then(response => response.json())
           .then(data => {
-            console.log(data);
-            this.showResult(data.results);
+            console.log('server response', data);
+            if(data.message && data.message==='Internal server error'){
+              this.showResult(data.message);
+
+            }else{
+              this.showResult(data.results);
+            }
             this.hideLoader();
           })
           .catch(err => {
@@ -623,7 +634,7 @@
       }
 
       handleError(err = {}) {
-        console.log(err);
+        console.log('error', err);
         this.showNotification('Error');
         this.hideLoader();
       }
@@ -716,14 +727,14 @@
               this.fetchWholeCode(fileToFetch.index);
             })
             .catch(err => {
-              console.log(err);
+              console.log('error', err);
               this.showNotification('err');
               this.hideLoader();
             })
         } else {
-          console.log(this._files);
-          if (this._files.length > 0) {
-            this.openFile(this._files[0].path);
+          const firstFile = this._files.find(f => f.type !== 'dir');
+          if (firstFile) {
+            this.openFile(firstFile.path);
           }
           this.hideLoader();
         }
@@ -785,6 +796,7 @@
           this._successEle.innerHTML = data.numPassedTests + ' ' + this._successFont;
           this._resultEle.removeAttribute('hidden');
           let html = '';
+          let index = 1;
           for (let r of data.testResults || []) {
             for (let result of r.testResults || []) {
               html += `<div class="log">
@@ -792,10 +804,10 @@
                       <i class="fas ${result.status === 'failed' ? "fa-times-circle" : 'fa-check-circle'}"></i>
                     </div>
                     <div class="log-describe ${result.status === 'failed' ? 'error' : 'success'}">
-                      ${result.ancestorTitles && result.ancestorTitles.length ? result.ancestorTitles.reduce((a, b) => a + ' ' + b) : ''}
+                    ${index + ' '}${result.ancestorTitles && result.ancestorTitles.length ? result.ancestorTitles.reduce((a, b) => a + ' ' + b) : ''}
                     </div>
                     <div class="log-expect">
-                      ${result.title}
+                      ${result.title || 'Not described'}
                     </div>
                     <div class="log-time">
                       ${result.duration} ms
@@ -807,20 +819,23 @@
                   <pre>${result.failureMessages}</pre>
                 </div>`
               }
+              index++;
             }
           }
 
           document.querySelector('.result-logs').innerHTML = html;
         } else {
           this._resultEle.removeAttribute('hidden');
-          document.querySelector('.result-logs').innerHTML = data;
+          document.querySelector('.result-logs').innerHTML = '';
+          this._errorEle.innerHTML = '<span style="color:#124f8e">😞</span>';
+          this._resultTextEle.innerHTML = data;
         }
         window.scrollTo(0, 900);
       }
       hideResult() {
         this._resultEle.setAttribute('hidden', true);
         document.querySelector('.result-logs').innerHTML = "";
-        this._resultTextEle.innerHTML='';
+        this._resultTextEle.innerHTML = '';
       }
 
     }
