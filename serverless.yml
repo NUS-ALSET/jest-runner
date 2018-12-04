@@ -1,7 +1,9 @@
 service: helloTest
 provider:
   name: aws
-  runtime: nodejs6.10
+  runtime: nodejs8.10
+  memorySize: 1024
+  timeout: 30
 functions:
   hello:
     handler: index.handler
@@ -9,6 +11,8 @@ functions:
       - http:
           path: helloTest
           method: get
+          cors: true
       - http:
           path: helloTest
           method: post
+          cors: true

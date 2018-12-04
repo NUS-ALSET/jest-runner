@@ -492,8 +492,8 @@
     </div>
     <!-- <button class="bigBtn" id="addFileBtn"> Add File</button> -->
     <div style="height: 97px">
-      <button class="bigBtn" id="saveFileBtn"> Save File </button>
-      <button class="bigBtn" id="postButton"> Run Tests</button>
+      <button class="bigBtn" id="saveFileBtn">Save File </button>
+      <button class="bigBtn" id="postButton">Run Tests</button>
     </div>
 
   </div>
@@ -524,10 +524,11 @@
       py: 'python',
       ts: 'typescript'
     };
+    const encodedToken = 'NDlmNDE5OWM0MGNmM2Q1OTA1NTEwOTM3OWFiMzhmOGExYjcwMTE2Yw==';
     class App {
       constructor() {
         /********** Add Github Acess Token Here **********/
-        this._accessToken = '55049a3ced7a4cc64cfd62c47bccbaacf5849176'; //'<github_access_token>';
+        this._accessToken = atob(encodedToken); //'<github_access_token>';
         /************************************************/
 
         this._editor = ace.edit('editor');
@@ -552,7 +553,7 @@
         this._githubURLEle = document.querySelector('#githubForm input');
         this._headerTitleEle = document.querySelector('#title h3');
         this._notificationEle = document.querySelector('.notification');
-        
+      
         this._githubURLEle.addEventListener('keyup',(e)=>{
           if(e.key==='Enter'){
             this.fetchGithubData();
@@ -828,6 +829,7 @@
           this._resultEle.removeAttribute('hidden');
           document.querySelector('.result-logs').innerHTML = '';
           this._errorEle.innerHTML = '<span style="color:#124f8e">😞</span>';
+          this._successEle.innerHTML = "";
           this._resultTextEle.innerHTML = data;
         }
         window.scrollTo(0, 900);

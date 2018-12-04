@@ -16,7 +16,10 @@ module.exports.handler = function (event, context, callback) {
     let result = {
       "isBase64Encoded": false,
       "statusCode": 200,
-      "headers": { "content-type": "text/html" },
+      "headers": {
+        "content-type": "text/html",
+        "Access-Control-Allow-Origin": "*"
+      },
       "body": html
     }
 
@@ -116,7 +119,10 @@ module.exports.handler = function (event, context, callback) {
         let result = {
           "isBase64Encoded": false,
           "statusCode": 200,
-          "headers": { "content-type": "application/json" },
+          "headers": {
+            "content-type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          },
           "body": JSON.stringify(success)
         }
 
@@ -129,7 +135,10 @@ module.exports.handler = function (event, context, callback) {
         let result = {
           "isBase64Encoded": false,
           "statusCode": 200,
-          "headers": { "content-type": "text/html" },//"application/json"},
+          "headers": {
+            "content-type": "text/html",
+            "Access-Control-Allow-Origin": "*"
+          },
           "body": JSON.stringify(failure)
         }
         callback(null, result);
@@ -139,10 +148,13 @@ module.exports.handler = function (event, context, callback) {
     let result = {
       "isBase64Encoded": false,
       "statusCode": 200,
-      "headers": { "content-type": "text/html" },//"application/json"},
+      "headers": {
+        "content-type": "text/html",
+        "Access-Control-Allow-Origin": "*"
+      },
       "body": "Not waiting to return"
     }
-    setTimeout(function() {
+    setTimeout(function () {
       callback(null, result);
 
     }, 15000);
