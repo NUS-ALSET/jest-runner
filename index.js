@@ -1,13 +1,13 @@
 const jest = require("jest");
 const babel = require("babel-core")
 const fs = require('fs');
-const rimraf=require('rimraf');
+const rimraf = require('rimraf');
 
 const rootDir = '/tmp/project';
-module.exports.handler = function(event, context, callback) {
+module.exports.handler = function (event, context, callback) {
 
 
-  if (event.httpMethod == "GET"){
+  if (event.httpMethod == "GET") {
 
     // Read in text for index.html.
     let html = fs.readFileSync(__dirname + '/index.html', 'utf8');
@@ -16,8 +16,12 @@ module.exports.handler = function(event, context, callback) {
     let result = {
       "isBase64Encoded": false,
       "statusCode": 200,
-      "headers": {"content-type": "text/html"},
-      "body": html}
+      "headers": {
+        "content-type": "text/html",
+        "Access-Control-Allow-Origin": "*"
+      },
+      "body": html
+    }
 
     callback(null, result);
 
@@ -29,8 +33,8 @@ module.exports.handler = function(event, context, callback) {
 
     // Look for locally passed files.
     // remove old files
-    const hasExist=fs.existsSync(rootDir);
-    if(hasExist){
+    const hasExist = fs.existsSync(rootDir);
+    if (hasExist) {
       rimraf.sync(rootDir);
     }
     fs.mkdirSync(rootDir);
@@ -38,9 +42,9 @@ module.exports.handler = function(event, context, callback) {
     const babelConfig = {
       "presets": [
         "env",
-        "stage-3",
-        "es2015",
-        "vue",
+        // "stage-3",
+        // "es2015",
+        // "vue",
         "react"
       ],
       "plugins": [
@@ -48,7 +52,7 @@ module.exports.handler = function(event, context, callback) {
           "cwd": [__dirname],
           "root": rootDir,
           resolvePath(source, file, opts) {
-            console.log(source[0] === '.' ? source : `${__dirname}/node_modules/${source}`);
+            // console.log(source[0] === '.' ? source : `${__dirname}/node_modules/${source}`);
             return source[0] === '.' ? source : `${__dirname}/node_modules/${source}`;
           }
         }
@@ -56,38 +60,43 @@ module.exports.handler = function(event, context, callback) {
       ]
     }
     //console.log(body.files);
-    const existPath ={};
+    const existPath = {};
     // Save file to the tmp directory
-    function saveFile(filePath,code){
+    function saveFile(filePath, code) {
       const paths = filePath.split('/');
-      const folders = paths.length>1 ? paths.slice(0,-1) : [];
-      if(folders.length>0){
-        let path='';
-        for(let folder of folders){
-          path +=folder;
-          if(!existPath[path]){
+      const folders = paths.length > 1 ? paths.slice(0, -1) : [];
+      if (folders.length > 0) {
+        let path = '';
+        for (let folder of folders) {
+          path += folder;
+          if (!existPath[path]) {
             fs.mkdirSync(`${rootDir}/${path}`);
-            existPath[path]=true;
+            existPath[path] = true;
           }
-          path+='/';
+          path += '/';
         }
       }
       let compiledCode = {};
       if (/\.(js|vue)?$/.test(filePath)) {
         compiledCode = babel.transform(code, babelConfig);
-        console.log(compiledCode);
-      } else{
+        // console.log(compiledCode);
+      } else {
         compiledCode.code = code;
       }
-      fs.writeFileSync(`${rootDir}/${filePath}`,compiledCode.code);
+      fs.writeFileSync(`${rootDir}/${filePath}`, compiledCode.code);
     }
-    for (file in body.files){
-      console.log(file);
-      if(file != "data1.txt"){
-        saveFile(file,body.files[file]);
+    for (file in body.files) {
+      // console.log(file);
+      // configuration file will not add to /tmp folder .bablerc 
+      if (file != "data1.txt" && file[0] !== '.') {
+        saveFile(file, body.files[file]);
       } else {
         console.log("Not handling zip files encoded in data1.txt yet.")
       }
+    }
+    // package.json file is mendatory for jest
+    if (!existPath['package.json']) {
+      fs.writeFileSync(`${rootDir}/package.json`, '{}');
     }
 
     console.log('Running index.handler');
@@ -110,7 +119,10 @@ module.exports.handler = function(event, context, callback) {
         let result = {
           "isBase64Encoded": false,
           "statusCode": 200,
-          "headers": {"content-type": "application/json"},
+          "headers": {
+            "content-type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          },
           "body": JSON.stringify(success)
         }
 
@@ -123,7 +135,10 @@ module.exports.handler = function(event, context, callback) {
         let result = {
           "isBase64Encoded": false,
           "statusCode": 200,
-          "headers": {"content-type": "text/html"},//"application/json"},
+          "headers": {
+            "content-type": "text/html",
+            "Access-Control-Allow-Origin": "*"
+          },
           "body": JSON.stringify(failure)
         }
         callback(null, result);
@@ -133,10 +148,13 @@ module.exports.handler = function(event, context, callback) {
     let result = {
       "isBase64Encoded": false,
       "statusCode": 200,
-      "headers": {"content-type": "text/html"},//"application/json"},
+      "headers": {
+        "content-type": "text/html",
+        "Access-Control-Allow-Origin": "*"
+      },
       "body": "Not waiting to return"
     }
-    setTimeout(function() {
+    setTimeout(function () {
       callback(null, result);
 
     }, 15000);
