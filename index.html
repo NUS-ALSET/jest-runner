@@ -90,7 +90,31 @@
     .c-spinner--big {
       --spinner-size: 64px;
     }
+    #coverage-status{
+      background-color: black;
+      color : white;
+      padding: 10px 30px;
+    }
+    #coverage-status table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 650px;
+    }
 
+    #coverage-status table td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+      color: #fff;
+    }
+
+    .coverage-input {
+      background-color: transparent !important;
+      width : 190px !important;
+    }
+    .coverage-input input{
+      zoom: 1.6;
+    }
     /***
  * Animations
  */
@@ -494,6 +518,10 @@
     <div style="height: 97px">
       <button class="bigBtn" id="saveFileBtn">Save File </button>
       <button class="bigBtn" id="postButton">Run Tests</button>
+      <div class="bigBtn coverage-input">
+          <input id="isCoverage" type="checkbox"/>
+          <label for="isCoverage">Coverage</label>
+        </div>
     </div>
 
   </div>
@@ -510,6 +538,24 @@
     <div class="result-logs">
 
     </div>
+    <div id="coverage-status" hidden>
+        <h2>Code Coverage Result</h2>
+        <div>
+          <table>
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>% Stmts </th>
+                <th>% Branch</th>
+                <th>% Funcs</th>
+              </tr>
+            </thead>
+            <tbody>
+  
+            </tbody>
+          </table>
+        </div>
+    </div>
     <div class="mainWrap">
       <h4 style="color: white; padding: 11px;">Complete Logs </h4>
       <pre class="console" id="result-text"></pre>
@@ -524,11 +570,10 @@
       py: 'python',
       ts: 'typescript'
     };
-    const encodedToken = 'NDlmNDE5OWM0MGNmM2Q1OTA1NTEwOTM3OWFiMzhmOGExYjcwMTE2Yw==';
     class App {
       constructor() {
         /********** Add Github Acess Token Here **********/
-        this._accessToken = atob(encodedToken); //'<github_access_token>';
+        this._accessToken = '<github_access_token>';
         /************************************************/
 
         this._editor = ace.edit('editor');
@@ -544,7 +589,7 @@
         this._repoPath = null
         this._selectedFile = null;
         this._files = [];
-
+        this.executeCoverage = false;
         this._resultEle = document.getElementById('result-div');
         this._resultTextEle = document.getElementById('result-text');
         this._loaderEle = document.getElementById('loader');
@@ -553,6 +598,7 @@
         this._githubURLEle = document.querySelector('#githubForm input');
         this._headerTitleEle = document.querySelector('#title h3');
         this._notificationEle = document.querySelector('.notification');
+        this._coverageResult = document.querySelector('#coverage-status');
       
         this._githubURLEle.addEventListener('keyup',(e)=>{
           if(e.key==='Enter'){
@@ -606,7 +652,7 @@
         this.showLoader();
         fetch(this._serverUrl, {
           method: 'POST',
-          body: JSON.stringify({ files: body }),
+          body: JSON.stringify({ files: body , executeCoverage : this.executeCoverage}),
           headers: {
             "Content-Type": "application/json; charset=utf-8",
           },
@@ -825,6 +871,21 @@
           }
 
           document.querySelector('.result-logs').innerHTML = html;
+          // show coverage
+          const coverage = this.calculateCoverage(data.coverageMap);
+          let rows = "";
+          if(coverage.length>0){
+            for(let file of coverage){
+              rows += `<tr>
+                        <td>${file.fileName}</td>
+                        <td>${file.statements}</td>
+                        <td>${file.branches}</td>
+                        <td>${file.functions}</td>
+                    </tr>`
+            }
+            document.querySelector('#coverage-status tbody').innerHTML=rows;
+            this._coverageResult.removeAttribute('hidden');
+          }
         } else {
           this._resultEle.removeAttribute('hidden');
           document.querySelector('.result-logs').innerHTML = '';
@@ -834,19 +895,70 @@
         }
         window.scrollTo(0, 900);
       }
+      calculateCoverage (coverageObj){
+        if(!coverageObj || typeof coverageObj !== 'object' || Object.keys(coverageObj).length==0){
+          return [];
+        }
+        const coverage = [];
+        Object.keys(coverageObj).forEach(file => {
+          const data = coverageObj[file];
+          const fileName = file.replace('/tmp/project/', '');
+          let coverageKeys = [{
+            key: 's',
+            name: 'statements'
+          },
+          {
+            key: 'b',
+            name: 'branches'
+          },
+          {
+            key: 'f',
+            name: 'functions'
+          }];
+          const coverageInfo = {
+            fileName
+          }
+          coverageKeys.forEach(cov => {
+            const total = Object.keys(data[cov.key]).length;
+            if(total==0){
+              coverageInfo[cov.name] = 100.00;
+            }else{
+              const covered = Object.keys(data[cov.key]).filter(k => data.s[k] == 1).length;
+              coverageInfo[cov.name] = (covered*100 / total).toFixed(2);
+            }
+          })
+          coverage.push(coverageInfo);
+        })
+        // calculate for all
+        const allFile = {
+          fileName : 'All Files',
+          statements : coverage.reduce((acc,curr)=>acc + curr.statements, 0)/coverage.length,
+          branches : coverage.reduce((acc,curr)=>acc + curr.branches, 0)/coverage.length,
+          functions : coverage.reduce((acc,curr)=>acc + curr.functions, 0)/coverage.length
+        }
+        coverage.unshift(allFile);
+        return coverage;
+      }
       hideResult() {
         this._resultEle.setAttribute('hidden', true);
         document.querySelector('.result-logs').innerHTML = "";
         this._resultTextEle.innerHTML = '';
+        this._coverageResult.setAttribute('hidden', true);
+        document.querySelector('#coverage-status tbody').innerHTML= ""
       }
-
+      onCoverageSelect(event){
+        this.executeCoverage = event.target.checked;
+      }
     }
     const app = new App();
 
     document.getElementById('postButton').addEventListener('click', (e) => app.postFiles());
     document.querySelector('#githubForm button').addEventListener('click', (e) => app.fetchGithubData());
     document.getElementById('saveFileBtn').addEventListener('click', (e) => app.saveFile());
+    document.getElementById('isCoverage').addEventListener('click', (e)=> app.onCoverageSelect(e))
     const openFile = filePath => app.openFile(filePath);
+
+
 
   </script>
 

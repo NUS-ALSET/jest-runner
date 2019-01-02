@@ -105,10 +105,11 @@ module.exports.handler = function (event, context, callback) {
     console.log('==================================');
 
     const options = {
-      projects: [__dirname],
+      projects: ['/tmp/project'],
       silent: true,
+      coverage : body.executeCoverage
     };
-
+    
     jest
       .runCLI(options, options.projects)
       .then((success) => {
